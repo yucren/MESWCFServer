@@ -1,0 +1,552 @@
+﻿using System;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Text;
+using System.Windows.Forms;
+
+namespace LonKing
+{
+	// Token: 0x02000005 RID: 5
+	public class Board : Form
+	{
+		// Token: 0x0600001D RID: 29 RVA: 0x00003D0C File Offset: 0x00001F0C
+		public Board(string name, string userid, string dptType, string dptName)
+		{
+			this.InitializeComponent();
+			this.login_user = name;
+			this.Userno = userid;
+			this.UserDptType = dptType;
+			this.UserDptName = dptName;
+		}
+
+		// Token: 0x0600001E RID: 30 RVA: 0x00003D74 File Offset: 0x00001F74
+		private DataTable GetSeries(string number)
+		{
+			return DataHelper.GetList("select * from vw_lines where ftype = 1 and  fitemcode in (" + number + ")").Tables[0];
+		}
+
+		// Token: 0x0600001F RID: 31 RVA: 0x00003DA8 File Offset: 0x00001FA8
+		private DataTable GetProcess(int id)
+		{
+			string sql = "select a.fInterID,fConfigID,fProTecID,fCode,fName from LKM_MCCPTEntry a left join lkm_CommonBill b on a.fProTecID=b.fInterID where fConfigID=" + id + " order by fOrders asc";
+			return DataHelper.GetList(sql).Tables[0];
+		}
+
+		// Token: 0x06000020 RID: 32 RVA: 0x00003DE4 File Offset: 0x00001FE4
+		private int HandleData(int type)
+		{
+			SqlParameter[] array = new SqlParameter[]
+			{
+				new SqlParameter("@kbID", 0),
+				new SqlParameter("@curKBID", 0),
+				new SqlParameter("@bustype", 8),
+				new SqlParameter("@opertype", 8),
+				new SqlParameter("@lineID", 8),
+				new SqlParameter("@cStatus", 8),
+				new SqlParameter("@nStatus", 8),
+				new SqlParameter("@operName", 12, 50)
+			};
+			array[0].Value = this._kbid;
+			array[1].Value = this._scanid;
+			array[2].Value = 1;
+			array[3].Value = type;
+			array[4].Value = this._lineID;
+			array[5].Value = this._status;
+			array[6].Value = this._next_status;
+			array[7].Value = this._user;
+			return DataHelper.ExcutePro(array, "pro_ExecKanbanScanHandle_lansq");
+		}
+
+		// Token: 0x06000021 RID: 33 RVA: 0x00003F10 File Offset: 0x00002110
+		private void tb_Board_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (this.tb_Board.Text.IndexOf("-") > -1)
+			{
+				this._boardNo = this.tb_Board.Text;
+				string a = this._boardNo.Substring(0, 1);
+				if (a != "S")
+				{
+					MessageBox.Show("请扫描生产看板");
+					this.tb_Board.Text = null;
+					this.tb_Board.Focus();
+				}
+				else
+				{
+					StringBuilder stringBuilder = new StringBuilder("select vv.finterid,isnull(vv.fCurScanID,0) as fCurScanID,vv.fbillno,vv.fstatus,vv.fstatuName from lkm_exec_kanban v inner join lkm_exec_kanban_entry vv on v.finterid = vv.fmainid ");
+					stringBuilder.Append(" where v.fstatus = 1 and vv.fstatus != 2 and  vv.fbillno='" + this._boardNo + "'");
+					DataTable dataTable = DataHelper.GetList(stringBuilder.ToString()).Tables[0];
+					if (dataTable.Rows.Count > 0)
+					{
+						this._status = int.Parse(dataTable.Rows[0]["fstatus"].ToString());
+						this._statusname = dataTable.Rows[0]["fstatuName"].ToString();
+						this._kbid = int.Parse(dataTable.Rows[0]["finterid"].ToString());
+						this._scanid = int.Parse(dataTable.Rows[0]["fCurScanID"].ToString());
+						this.btn_start.Enabled = (this._status == 0 || this._status == 1);
+						this.btn_submit.Enabled = (this._status != 0 && this._status != 1 && this._status != -1);
+						this.btn_retrieve.Enabled = (this._status == -1);
+						StringBuilder stringBuilder2 = new StringBuilder("select fitemid,fitemcode,fitemname,ftransfer_batch from vw_ExecKB_Detail_List ");
+						stringBuilder2.Append("  where fbillno='" + this._boardNo + "'");
+						this._dtItems = DataHelper.GetList(stringBuilder2.ToString()).Tables[0];
+						if (this._dtItems.Rows.Count > 0)
+						{
+							this.dataGridItem.DataSource = this._dtItems;
+							this.dataGridItem.TableStyles.Clear();
+							DataGridTableStyle dataGridTableStyle = new DataGridTableStyle();
+							dataGridTableStyle.MappingName = this._dtItems.TableName;
+							this.dataGridItem.TableStyles.Add(dataGridTableStyle);
+							this.dataGridItem.TableStyles[0].GridColumnStyles["fitemid"].Width = 0;
+							this.dataGridItem.TableStyles[0].GridColumnStyles["fitemcode"].Width = 70;
+							this.dataGridItem.TableStyles[0].GridColumnStyles["fitemname"].Width = 90;
+							this.dataGridItem.TableStyles[0].GridColumnStyles["ftransfer_batch"].Width = 50;
+							this.dataGridItem.TableStyles[0].GridColumnStyles["fitemcode"].HeaderText = "料号";
+							this.dataGridItem.TableStyles[0].GridColumnStyles["fitemname"].HeaderText = "品名";
+							this.dataGridItem.TableStyles[0].GridColumnStyles["ftransfer_batch"].HeaderText = "数量";
+							string text = "";
+							for (int i = 0; i <= this._dtItems.Rows.Count - 1; i++)
+							{
+								if (i < this._dtItems.Rows.Count - 1)
+								{
+									text = text + "'" + this._dtItems.Rows[i]["fitemcode"].ToString() + "',";
+								}
+								else
+								{
+									text = text + "'" + this._dtItems.Rows[i]["fitemcode"].ToString() + "'";
+								}
+							}
+							try
+							{
+								this._islast = false;
+								DataTable series = this.GetSeries(text);
+								if (series.Rows.Count < 1)
+								{
+									MessageBox.Show("[" + text + "]未绑定产线物料");
+									this._dtItems.Clear();
+									this.tb_Board.Enabled = true;
+									this.tb_Board.Focus();
+									this.tb_Board.Text = null;
+								}
+								else
+								{
+									this._lineID = int.Parse(series.Rows[0]["fconfigid"].ToString());
+									this._dtprocess = this.GetProcess(this._lineID);
+									if (this._dtprocess.Rows.Count > 0)
+									{
+										StringBuilder stringBuilder3 = new StringBuilder("select a.fstatus,a.fstatuName,c.fName,a.finterid,b.fpersons,b.fPsnItemInfo,a.fbillno,b.fProTecID ");
+										stringBuilder3.Append(" from lkm_exec_kanban_entry a ");
+										stringBuilder3.Append(" left join LKM_MCCPTEntry b on a.fStatus=b.fInterID ");
+										stringBuilder3.Append(" left join lkm_CommonBill c on b.fProTecID=c.fInterID ");
+										stringBuilder3.Append(" where a.fstatus<>2 and a.fbillno='" + this._boardNo + "'");
+										DataTable dataTable2 = DataHelper.GetList(stringBuilder3.ToString()).Tables[0];
+										if (dataTable2.Rows.Count > 0)
+										{
+											this._user = ((dataTable2.Rows[0]["fpersons"].ToString() == "") ? this.lb_operName.Text : dataTable2.Rows[0]["fpersons"].ToString());
+											this._duty = dataTable2.Rows[0]["fPsnItemInfo"].ToString();
+											this._scanner = this.lb_operName.Text;
+											if (int.Parse(dataTable2.Rows[0]["fstatus"].ToString()) == 0 || int.Parse(dataTable2.Rows[0]["fstatus"].ToString()) == 1)
+											{
+												this._status = int.Parse(this._dtprocess.Rows[0]["finterid"].ToString());
+												this._statusname = this._dtprocess.Rows[0]["fName"].ToString();
+											}
+											else
+											{
+												this._statusname = dataTable2.Rows[0]["fstatuName"].ToString();
+												this._status = int.Parse(dataTable2.Rows[0]["fstatus"].ToString());
+											}
+											if (this._status == int.Parse(this._dtprocess.Rows[this._dtprocess.Rows.Count - 1]["finterid"].ToString()))
+											{
+												this._islast = true;
+											}
+											for (int i = 0; i < this._dtprocess.Rows.Count; i++)
+											{
+												if (this._status == int.Parse(this._dtprocess.Rows[i]["finterid"].ToString()))
+												{
+													this._cur = i;
+												}
+											}
+											if (this._islast)
+											{
+												this._next_status = -1;
+												this._next_statusname = "待回收";
+											}
+											else if (this._status == -1)
+											{
+												this._next_status = 1;
+												this._next_statusname = "可用";
+											}
+											else
+											{
+												this._next_status = int.Parse(this._dtprocess.Rows[this._cur + 1]["finterid"].ToString());
+												this._next_statusname = this._dtprocess.Rows[this._cur + 1]["fname"].ToString();
+											}
+											this.tb_cPro.Text = this._statusname;
+											this.tb_nPro.Text = this._next_statusname;
+											this.lb_operName.Text = this.login_user;
+										}
+									}
+								}
+							}
+							catch (Exception ex)
+							{
+								MessageBox.Show("看板扫描错误!" + ex.Message);
+								this.tb_Board.Text = null;
+								this.tb_Board.Enabled = true;
+								this.tb_Board.Focus();
+							}
+						}
+					}
+					else
+					{
+						string text2 = "看板[" + this._boardNo + "]不可用，请重新采集";
+						MessageBox.Show(text2);
+						this.tb_Board.Enabled = true;
+						this.tb_Board.Focus();
+						this.tb_Board.Text = null;
+					}
+				}
+			}
+		}
+
+		// Token: 0x06000022 RID: 34 RVA: 0x000048B0 File Offset: 0x00002AB0
+		private void btn_start_Click(object sender, EventArgs e)
+		{
+			if (this.tb_Board.Text.IndexOf("-") > -1)
+			{
+				if (this.HandleData(-1) == -1)
+				{
+					string text = "【开工】提交失败，请重新采集看板";
+					MessageBox.Show(text);
+				}
+				this.tb_Board.Enabled = true;
+				this.tb_Board.Focus();
+				this.tb_Board.Text = null;
+				this.tb_cPro.Text = null;
+				this.tb_nPro.Text = null;
+				this._dtItems.Clear();
+				this._dtprocess.Clear();
+				this.btn_start.Enabled = false;
+			}
+		}
+
+		// Token: 0x06000023 RID: 35 RVA: 0x00004968 File Offset: 0x00002B68
+		private void btn_submint_Click(object sender, EventArgs e)
+		{
+			if (this.tb_Board.Text.IndexOf("-") > -1)
+			{
+				for (int i = 0; i <= this._dtItems.Rows.Count - 1; i++)
+				{
+					int num = int.Parse(this._dtItems.Rows[i]["ftransfer_batch"].ToString());
+					string sql = string.Concat(new string[]
+					{
+						"select isnull(fcount,0) as fcount from lkm_blank_inventory where fitemid=",
+						this._dtItems.Rows[i]["fitemid"].ToString(),
+						" and flineid = ",
+						this._lineID.ToString(),
+						" and fproid = (select fProTecID from LKM_MCCPTEntry where finterid = ",
+						this._status.ToString(),
+						")"
+					});
+					int num2 = int.Parse(DataHelper.ExcuteSql(sql).ToString());
+					if (num2 - num < 0)
+					{
+						string text = "当前物料[" + this._dtItems.Rows[i]["fitemname"].ToString() + "]库存不足，不允许提交";
+						MessageBox.Show(text);
+						return;
+					}
+				}
+				if (this.HandleData(0) == -1)
+				{
+					string text = "提交失败，请重新采集看板";
+					MessageBox.Show(text);
+				}
+				this.tb_Board.Enabled = true;
+				this.tb_Board.Focus();
+				this.tb_Board.Text = null;
+				this.tb_cPro.Text = null;
+				this.tb_nPro.Text = null;
+				this._dtItems.Clear();
+				this._dtprocess.Clear();
+				this.btn_start.Enabled = false;
+				this.btn_submit.Enabled = false;
+			}
+		}
+
+		// Token: 0x06000024 RID: 36 RVA: 0x00004B60 File Offset: 0x00002D60
+		private void Board_Load(object sender, EventArgs e)
+		{
+			this.tb_Board.Focus();
+			this.tb_cPro.Enabled = false;
+			this.tb_nPro.Enabled = false;
+			this.lb_operName.Text = this.login_user;
+			this.btn_start.Enabled = false;
+			this.btn_submit.Enabled = false;
+			this.btn_retrieve.Enabled = false;
+		}
+
+		// Token: 0x06000025 RID: 37 RVA: 0x00004BCD File Offset: 0x00002DCD
+		private void panel1_Click(object sender, EventArgs e)
+		{
+			base.Close();
+		}
+
+		// Token: 0x06000026 RID: 38 RVA: 0x00004BD8 File Offset: 0x00002DD8
+		private void btn_retrieve_Click(object sender, EventArgs e)
+		{
+			if (this.HandleData(1) == -1)
+			{
+				string text = "回收失败，请重新采集看板";
+				MessageBox.Show(text);
+			}
+			this.tb_Board.Enabled = true;
+			this.tb_Board.Focus();
+			this.tb_Board.Text = null;
+			this.tb_cPro.Text = null;
+			this.tb_nPro.Text = null;
+			this._dtItems.Clear();
+			this._dtprocess.Clear();
+			this.btn_start.Enabled = false;
+			this.btn_submit.Enabled = false;
+			this.btn_retrieve.Enabled = false;
+		}
+
+		// Token: 0x06000027 RID: 39 RVA: 0x00004C88 File Offset: 0x00002E88
+		private void button5_Click(object sender, EventArgs e)
+		{
+			this.tb_Board.Enabled = true;
+			this.tb_Board.Focus();
+			this.tb_Board.Text = null;
+			this.tb_cPro.Text = null;
+			this.tb_nPro.Text = null;
+			this.lb_operName.Text = null;
+			this._dtItems.Clear();
+			this._dtprocess.Clear();
+			this.btn_start.Enabled = false;
+			this.btn_submit.Enabled = false;
+			this.btn_retrieve.Enabled = false;
+		}
+
+		// Token: 0x06000028 RID: 40 RVA: 0x00004D24 File Offset: 0x00002F24
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && this.components != null)
+			{
+				this.components.Dispose();
+			}
+			base.Dispose(disposing);
+		}
+
+		// Token: 0x06000029 RID: 41 RVA: 0x00004D5C File Offset: 0x00002F5C
+		private void InitializeComponent()
+		{
+			this.button5 = new Button();
+			this.panel1 = new Panel();
+			this.tb_Board = new TextBox();
+			this.lb_oper = new Label();
+			this.btn_start = new Button();
+			this.lb_cPro = new Label();
+			this.lb_board = new Label();
+			this.btn_submit = new Button();
+			this.lb_nPro = new Label();
+			this.tb_cPro = new TextBox();
+			this.tb_nPro = new TextBox();
+			this.lb_operName = new Label();
+			this.dataGridItem = new DataGrid();
+			this.btn_retrieve = new Button();
+			base.SuspendLayout();
+			this.button5.Location = new Point(215, 34);
+			this.button5.Name = "button5";
+			this.button5.Size = new Size(25, 20);
+			this.button5.TabIndex = 88;
+			this.button5.Text = "清";
+			this.button5.Click += this.button5_Click;
+			this.panel1.BackColor = Color.Yellow;
+			this.panel1.Location = new Point(215, 4);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new Size(25, 24);
+			this.panel1.Click += this.panel1_Click;
+			this.tb_Board.Location = new Point(88, 5);
+			this.tb_Board.Name = "tb_Board";
+			this.tb_Board.Size = new Size(124, 23);
+			this.tb_Board.TabIndex = 86;
+			this.tb_Board.KeyDown += this.tb_Board_KeyDown;
+			this.lb_oper.Location = new Point(3, 97);
+			this.lb_oper.Name = "lb_oper";
+			this.lb_oper.Size = new Size(53, 20);
+			this.lb_oper.Text = "操作者：";
+			this.btn_start.Location = new Point(14, 120);
+			this.btn_start.Name = "btn_start";
+			this.btn_start.Size = new Size(54, 23);
+			this.btn_start.TabIndex = 85;
+			this.btn_start.Text = "开工";
+			this.btn_start.Click += this.btn_start_Click;
+			this.lb_cPro.ForeColor = Color.FromArgb(0, 0, 0);
+			this.lb_cPro.Location = new Point(3, 37);
+			this.lb_cPro.Name = "lb_cPro";
+			this.lb_cPro.Size = new Size(110, 20);
+			this.lb_cPro.Text = "当前扫描点：";
+			this.lb_board.Location = new Point(3, 10);
+			this.lb_board.Name = "lb_board";
+			this.lb_board.Size = new Size(79, 20);
+			this.lb_board.Text = "看板扫描：";
+			this.lb_board.TextAlign = ContentAlignment.TopCenter;
+			this.btn_submit.Location = new Point(103, 120);
+			this.btn_submit.Name = "btn_submit";
+			this.btn_submit.Size = new Size(50, 23);
+			this.btn_submit.TabIndex = 84;
+			this.btn_submit.Text = "提交";
+			this.btn_submit.Click += this.btn_submint_Click;
+			this.lb_nPro.ForeColor = Color.FromArgb(0, 0, 0);
+			this.lb_nPro.Location = new Point(3, 67);
+			this.lb_nPro.Name = "lb_nPro";
+			this.lb_nPro.Size = new Size(97, 20);
+			this.lb_nPro.Text = "下一扫描点：";
+			this.tb_cPro.Location = new Point(88, 34);
+			this.tb_cPro.Name = "tb_cPro";
+			this.tb_cPro.Size = new Size(124, 23);
+			this.tb_cPro.TabIndex = 98;
+			this.tb_nPro.Location = new Point(88, 63);
+			this.tb_nPro.Name = "tb_nPro";
+			this.tb_nPro.Size = new Size(124, 23);
+			this.tb_nPro.TabIndex = 99;
+			this.lb_operName.Location = new Point(67, 97);
+			this.lb_operName.Name = "lb_operName";
+			this.lb_operName.Size = new Size(145, 20);
+			this.dataGridItem.BackgroundColor = Color.FromArgb(128, 128, 128);
+			this.dataGridItem.Location = new Point(3, 149);
+			this.dataGridItem.Name = "dataGridItem";
+			this.dataGridItem.Size = new Size(237, 146);
+			this.dataGridItem.TabIndex = 105;
+			this.btn_retrieve.Location = new Point(181, 120);
+			this.btn_retrieve.Name = "btn_retrieve";
+			this.btn_retrieve.Size = new Size(50, 23);
+			this.btn_retrieve.TabIndex = 112;
+			this.btn_retrieve.Text = "回收";
+			this.btn_retrieve.Click += this.btn_retrieve_Click;
+			base.AutoScaleDimensions = new SizeF(96f, 96f);
+			base.AutoScaleMode = AutoScaleMode.Dpi;
+			this.AutoScroll = true;
+			base.ClientSize = new Size(243, 300);
+			base.Controls.Add(this.btn_retrieve);
+			base.Controls.Add(this.dataGridItem);
+			base.Controls.Add(this.lb_operName);
+			base.Controls.Add(this.tb_nPro);
+			base.Controls.Add(this.tb_cPro);
+			base.Controls.Add(this.lb_nPro);
+			base.Controls.Add(this.button5);
+			base.Controls.Add(this.panel1);
+			base.Controls.Add(this.tb_Board);
+			base.Controls.Add(this.lb_oper);
+			base.Controls.Add(this.btn_start);
+			base.Controls.Add(this.lb_cPro);
+			base.Controls.Add(this.lb_board);
+			base.Controls.Add(this.btn_submit);
+			base.Name = "Board";
+			this.Text = "生产看板采集";
+			base.Load += this.Board_Load;
+			base.ResumeLayout(false);
+		}
+
+		// Token: 0x04000021 RID: 33
+		public string login_user;
+
+		// Token: 0x04000022 RID: 34
+		private int _cur = 0;
+
+		// Token: 0x04000023 RID: 35
+		private DataTable _dtprocess = new DataTable();
+
+		// Token: 0x04000024 RID: 36
+		private DataTable _dtItems = new DataTable();
+
+		// Token: 0x04000025 RID: 37
+		private bool _islast = false;
+
+		// Token: 0x04000026 RID: 38
+		public string Userno;
+
+		// Token: 0x04000027 RID: 39
+		private string _user;
+
+		// Token: 0x04000028 RID: 40
+		private string _duty;
+
+		// Token: 0x04000029 RID: 41
+		private string _scanner;
+
+		// Token: 0x0400002A RID: 42
+		private string UserDptType;
+
+		// Token: 0x0400002B RID: 43
+		private string UserDptName;
+
+		// Token: 0x0400002C RID: 44
+		private int _scanid;
+
+		// Token: 0x0400002D RID: 45
+		private int _kbid;
+
+		// Token: 0x0400002E RID: 46
+		private string _boardNo;
+
+		// Token: 0x0400002F RID: 47
+		private int _lineID;
+
+		// Token: 0x04000030 RID: 48
+		private string _statusname;
+
+		// Token: 0x04000031 RID: 49
+		private int _status;
+
+		// Token: 0x04000032 RID: 50
+		private int _next_status;
+
+		// Token: 0x04000033 RID: 51
+		private string _next_statusname;
+
+		// Token: 0x04000034 RID: 52
+		private IContainer components = null;
+
+		// Token: 0x04000035 RID: 53
+		private Button button5;
+
+		// Token: 0x04000036 RID: 54
+		private Panel panel1;
+
+		// Token: 0x04000037 RID: 55
+		private TextBox tb_Board;
+
+		// Token: 0x04000038 RID: 56
+		private Label lb_oper;
+
+		// Token: 0x04000039 RID: 57
+		private Button btn_start;
+
+		// Token: 0x0400003A RID: 58
+		private Label lb_cPro;
+
+		// Token: 0x0400003B RID: 59
+		private Label lb_board;
+
+		// Token: 0x0400003C RID: 60
+		private Button btn_submit;
+
+		// Token: 0x0400003D RID: 61
+		private Label lb_nPro;
+
+		// Token: 0x0400003E RID: 62
+		private TextBox tb_cPro;
+
+		// Token: 0x0400003F RID: 63
+		private TextBox tb_nPro;
+
+		// Token: 0x04000040 RID: 64
+		private Label lb_operName;
+
+		// Token: 0x04000041 RID: 65
+		private DataGrid dataGridItem;
+
+		// Token: 0x04000042 RID: 66
+		private Button btn_retrieve;
+	}
+}
