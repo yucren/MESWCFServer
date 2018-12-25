@@ -42,11 +42,11 @@ namespace SHJXMESWCFServer
         [DataMember]
         public string UserDpt { get; set; }
         [DataMember]
-        public string User { get; set; }
+        public string ScanUser { get; set; }
         [DataMember]
         public string Duty { get; set; }
-        [DataMember]
-        public string Scanner { get; set; }
+        //[DataMember]
+        //public string Scanner { get; set; }
         [DataMember]
         public string UserDptType { get; set; }
         [DataMember]
@@ -72,8 +72,8 @@ namespace SHJXMESWCFServer
         public string Next_statusname { get; set; }
         [DataMember]
         public string Tb_Board { get; set; }
-        [DataMember]
-        public string Lb_operName { get; set; }
+        //[DataMember]
+        //public string Lb_operName { get; set; }
         [DataMember]
         public string Tb_cPro { get; set; }
         [DataMember]
@@ -100,7 +100,7 @@ namespace SHJXMESWCFServer
             this.LineID = lineid;
             this.Status = status;
             this.Next_status = nextStatus;
-            this.User = user;
+            
             SqlParameter[] array = new SqlParameter[]
              {
                 new SqlParameter("@kbID",SqlDbType.BigInt ),
@@ -119,7 +119,7 @@ namespace SHJXMESWCFServer
             array[4].Value = this.LineID;
             array[5].Value = this.Status;
             array[6].Value = this.Next_status;
-            array[7].Value = this.User;
+            array[7].Value = this.ScanUser;
             return DataHelper.ExecuteSqlprocedure("pro_ExecKanbanScanHandle_lansq",array, DataHelper.CreateSqlConn("shjxmes"));
             
         }
@@ -146,7 +146,7 @@ namespace SHJXMESWCFServer
                 if (dataTable.Rows.Count > 0)
                 {
                    
-                    this.Lb_operName = array[2];
+                    this.Login_user = array[2];
                     this.Userno = array[0];
                     this.Role = dataTable.Rows[0]["RoleName"].ToString();
                     this.UserDpt = dataTable.Rows[0]["DepartCode"].ToString();
@@ -238,9 +238,8 @@ namespace SHJXMESWCFServer
                                         DataTable dataTable2 =(DataTable) DataHelper.ExecuteSql(stringBuilder3.ToString(), DataHelper.CreateSqlConn("shjxmes"), DataHelper.RetrunType.dataTable);
                                         if (dataTable2.Rows.Count > 0)
                                         {
-                                            this.User = ((dataTable2.Rows[0]["fpersons"].ToString() == "") ? this.Lb_operName : dataTable2.Rows[0]["fpersons"].ToString());
-                                            this.Duty = dataTable2.Rows[0]["fPsnItemInfo"].ToString();
-                                            this.Scanner = this.Lb_operName;
+                                            this.ScanUser = ((dataTable2.Rows[0]["fpersons"].ToString() == "") ? this.Login_user : dataTable2.Rows[0]["fpersons"].ToString());
+                                            this.Duty = dataTable2.Rows[0]["fPsnItemInfo"].ToString();                                           
                                             if (int.Parse(dataTable2.Rows[0]["fstatus"].ToString()) == 0 || int.Parse(dataTable2.Rows[0]["fstatus"].ToString()) == 1)
                                             {
                                                 this.Status = int.Parse(this.Dtprocess.Rows[0]["finterid"].ToString());
@@ -279,7 +278,7 @@ namespace SHJXMESWCFServer
                                             }
                                             this.Tb_cPro = this.Statusname;
                                             this.Tb_nPro = this.Next_statusname;
-                                            this.Lb_operName = this.Login_user;
+                                          
                                         }
                                     }
                                    
@@ -327,7 +326,7 @@ namespace SHJXMESWCFServer
 
             if (this.Tb_Board.IndexOf("-") > -1)
             {
-                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.User, -1) == -1)
+                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.ScanUser, -1) == -1)
                 {
                     string text = "【开工】提交失败，请重新采集看板";
                     Err = text;
@@ -371,7 +370,7 @@ namespace SHJXMESWCFServer
                         return Newtonsoft.Json.JsonConvert.SerializeObject(this);
                     }
                 }
-                if (this.HandleData(this.Kbid,this.Scanid,this.LineID,this.Status,this.Next_status,this.User, 0) == -1)
+                if (this.HandleData(this.Kbid,this.Scanid,this.LineID,this.Status,this.Next_status,this.ScanUser, 0) == -1)
                 {
                     string text = "提交失败，请重新采集看板";
                     Err = text;
@@ -414,7 +413,7 @@ namespace SHJXMESWCFServer
                         return Newtonsoft.Json.JsonConvert.SerializeObject(this);
                     }
                 }
-                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.User, 0) == -1)
+                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.ScanUser, 0) == -1)
                 {
                     string text = "提交失败，请重新采集看板";
                     Err = text;
