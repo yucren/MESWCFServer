@@ -2,111 +2,83 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace SHJXMESWCFServer
 {
     // 注意: 使用“重构”菜单上的“重命名”命令，可以同时更改代码、svc 和配置文件中的类名“Service1”。
     // 注意: 为了启动 WCF 测试客户端以测试此服务，请在解决方案资源管理器中选择 Service1.svc 或 Service1.svc.cs，然后开始调试。
+    [Serializable]
+ 
     public class MESService : IMESService
 
     {
         // Token: 0x04000021 RID: 33
-        private string login_user;
-
-        // Token: 0x04000022 RID: 34
-        private int _cur = 0;
-
-        // Token: 0x04000023 RID: 35
-        private DataTable _dtprocess = new DataTable();
-
-        // Token: 0x04000024 RID: 36
-        private DataTable _dtItems = new DataTable();
-
-        // Token: 0x04000025 RID: 37
-        private bool _islast = false;
-
-        // Token: 0x04000026 RID: 38
-        private string userno;
-
-        // Token: 0x04000027 RID: 39
-        private string _user;
-
-        // Token: 0x04000028 RID: 40
-        private string _duty;
-
-        // Token: 0x04000029 RID: 41
-        private string _scanner;
-
-        // Token: 0x0400002A RID: 42
-        private string userDptType;
-
-        // Token: 0x0400002B RID: 43
-        private string userDptName;
-
-        // Token: 0x0400002C RID: 44
-        private int _scanid;
-        private bool btn_start;
-        private bool btn_submit;
-        private bool btn_retrieve;
-
-        // Token: 0x0400002D RID: 45
-        private int _kbid;
-
-        // Token: 0x0400002E RID: 46
-        private string _boardNo;
-
-        // Token: 0x0400002F RID: 47
-        private int _lineID;
-
-        // Token: 0x04000030 RID: 48
-        private string _statusname;
-
-        // Token: 0x04000031 RID: 49
-        private int _status;
-
-        // Token: 0x04000032 RID: 50
-        private int _next_status;
-
-        // Token: 0x04000033 RID: 51
-        private string _next_statusname;
-        private string tb_Board;
-        private string lb_operName;
-        private string tb_cPro;
-        private string tb_nPro;
-
-        public string Err { get; private set; }
-        public string Login_user { get => login_user; set => login_user = value; }
-        public int Cur { get => _cur; set => _cur = value; }
-        public DataTable Dtprocess { get => _dtprocess; set => _dtprocess = value; }
-        public DataTable DtItems { get => _dtItems; set => _dtItems = value; }
-        public bool Islast { get => _islast; set => _islast = value; }
-        public string Userno { get => userno; set => userno = value; }
-        public string User { get => _user; set => _user = value; }
-        public string Duty { get => _duty; set => _duty = value; }
-        public string Scanner { get => _scanner; set => _scanner = value; }
-        public string UserDptType { get => userDptType; set => userDptType = value; }
+        
+        [DataMember]
+        public string Err { get;  set; }
+        [DataMember]
+        public string Login_user { get; set; }
+        [DataMember]
+        public int Cur { get; set; }
        
-        public string UserDptName { get => userDptName; set => userDptName = value; }
-        public int Scanid { get => _scanid; set => _scanid = value; }
-        public bool Btn_start { get => btn_start; set => btn_start = value; }
-        public bool Btn_submit { get => btn_submit; set => btn_submit = value; }
-        public bool Btn_retrieve { get => btn_retrieve; set => btn_retrieve = value; }
-        public int Kbid { get => _kbid; set => _kbid = value; }
-        public string BoardNo { get => _boardNo; set => _boardNo = value; }
-        public int LineID { get => _lineID; set => _lineID = value; }
-        public string Statusname { get => _statusname; set => _statusname = value; }
-        public int Status { get => _status; set => _status = value; }
-        public int Next_status { get => _next_status; set => _next_status = value; }
-        public string Next_statusname { get => _next_statusname; set => _next_statusname = value; }
-        public string Tb_Board { get => tb_Board; set => tb_Board = value; }
-        public string Lb_operName { get => lb_operName; set => lb_operName = value; }
-        public string Tb_cPro { get => tb_cPro; set => tb_cPro = value; }
-        public string Tb_nPro { get => tb_nPro; set => tb_nPro = value; }
+        public DataTable Dtprocess { get; set; }
+        
+         public DataTable DtItems { get; set; }
+        [DataMember]
+        public bool Islast { get; set; }
+        [DataMember]
+        public string Userno { get; set; }
+        [DataMember]
+        public string Role { get; set; }
+        [DataMember]
+        public string UserDpt { get; set; }
+        [DataMember]
+        public string User { get; set; }
+        [DataMember]
+        public string Duty { get; set; }
+        [DataMember]
+        public string Scanner { get; set; }
+        [DataMember]
+        public string UserDptType { get; set; }
+        [DataMember]
+        public string UserDptName { get; set; }
+        [DataMember]
+        public int Scanid { get; set; }
+        //public bool Btn_start { get => btn_start; set => btn_start = value; }
+        //public bool Btn_submit { get => btn_submit; set => btn_submit = value; }
+        //public bool Btn_retrieve { get => btn_retrieve; set => btn_retrieve = value; }
+        [DataMember]
+        public int Kbid { get; set; }
+        [DataMember]
+        public string BoardNo { get; set; }
+        [DataMember]
+        public int LineID { get; set; }
+        [DataMember]
+        public string Statusname { get; set; }
+        [DataMember]
+        public int Status { get; set; }
+        [DataMember]
+        public int Next_status { get; set; }
+        [DataMember]
+        public string Next_statusname { get; set; }
+        [DataMember]
+        public string Tb_Board { get; set; }
+        [DataMember]
+        public string Lb_operName { get; set; }
+        [DataMember]
+        public string Tb_cPro { get; set; }
+        [DataMember]
+        public string Tb_nPro { get; set; }
+      
 
         public DataTable GetProcess(int id)
         {
@@ -117,12 +89,18 @@ namespace SHJXMESWCFServer
 
         public DataTable GetSeries(string number)
         {
-            string sql = "select * from vw_lines where ftype = 1 and  fitemcode in (' + number + ')";
+            
+            string sql = "select * from vw_lines where ftype = 1 and  fitemcode in (" + number + ")";
             return (DataTable)DataHelper.ExecuteSql(sql, DataHelper.CreateSqlConn("shjxmes"),DataHelper.RetrunType.dataTable);
         }
-
-        public int HandleData(int type)
+        public int HandleData(int kbid,int scanid,int lineid,int status,int nextStatus,string user, int type)
         {
+            this.Kbid = kbid;
+            this.Scanid = scanid;
+            this.LineID = lineid;
+            this.Status = status;
+            this.Next_status = nextStatus;
+            this.User = user;
             SqlParameter[] array = new SqlParameter[]
              {
                 new SqlParameter("@kbID",SqlDbType.BigInt ),
@@ -142,12 +120,56 @@ namespace SHJXMESWCFServer
             array[5].Value = this.Status;
             array[6].Value = this.Next_status;
             array[7].Value = this.User;
-            return DataHelper.ExecuteSqlprocedure("pro_ExecKanbanScanHandle_lansq", DataHelper.CreateSqlConn("shjxmes"));
+            return DataHelper.ExecuteSqlprocedure("pro_ExecKanbanScanHandle_lansq",array, DataHelper.CreateSqlConn("shjxmes"));
             
         }
-
-        public string Scan()
+        
+        [WebGet(UriTemplate ="login?info={loginInfo}",ResponseFormat = WebMessageFormat.Xml)]
+        
+        public string Login(string loginInfo)
         {
+            string[] array = loginInfo.Replace('，', ',').Split(new char[]
+             {
+                ','
+             });
+            if (array.Length > 1)
+            {
+                string sql = string.Concat(new string[]
+                {
+                    "SELECT b.RoleName  ,a.Number ,d.DepartCode ,d.DepartName ,d.fAdmin FROM LKM_SysUser a  inner join LKM_Member c  on a.Number=c.Number  inner join LKM_Depart d  on c.DepartID=d.id  left JOIN LKM_UserInRole b ON a.UserInRole_id = b.id  where a.number='",
+                    array[0],
+                    "' and a.status=1 and a.pwd='",
+                    array[1],
+                    "'"
+                });
+                DataTable dataTable =(DataTable)DataHelper.ExecuteSql(sql,DataHelper.CreateSqlConn("shjxmes"), DataHelper.RetrunType.dataTable);
+                if (dataTable.Rows.Count > 0)
+                {
+                   
+                    this.Lb_operName = array[2];
+                    this.Userno = array[0];
+                    this.Role = dataTable.Rows[0]["RoleName"].ToString();
+                    this.UserDpt = dataTable.Rows[0]["DepartCode"].ToString();
+                    this.UserDptName = dataTable.Rows[0]["DepartName"].ToString();
+                    this.UserDptType = ((this.UserDpt == "01.07.04") ? "B" : "C");
+                    this.UserDptType = ((this.UserDpt == "00001") ? "A" : this.UserDptType);
+                   
+                }
+                else
+                {
+                  
+                   Err ="登录信息不正确!";
+                }
+            }
+            
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+
+        }
+        [WebGet(UriTemplate = "bscan?kbno={kbno}", ResponseFormat = WebMessageFormat.Xml,BodyStyle = WebMessageBodyStyle.Wrapped)]
+       // [WebInvoke(Method ="POST" , UriTemplate = "bscan?kbno={kbno}", RequestFormat = WebMessageFormat.Json,ResponseFormat = WebMessageFormat.Xml,BodyStyle = WebMessageBodyStyle.Bare)]
+        public string Scan(string kbno)
+        {
+            this.Tb_Board = kbno;
             if (this.Tb_Board.IndexOf("-") > -1)
             {
                 this.BoardNo = this.Tb_Board;
@@ -169,9 +191,9 @@ namespace SHJXMESWCFServer
                         this.Statusname = dataTable.Rows[0]["fstatuName"].ToString();
                         this.Kbid = int.Parse(dataTable.Rows[0]["finterid"].ToString());
                         this.Scanid = int.Parse(dataTable.Rows[0]["fCurScanID"].ToString());
-                        this.Btn_start = (this.Status == 0 || this.Status == 1);
-                        this.Btn_submit = (this.Status != 0 && this.Status != 1 && this.Status != -1);
-                        this.Btn_retrieve = (this.Status == -1);
+                        //this.Btn_start = (this.Status == 0 || this.Status == 1);
+                        //this.Btn_submit = (this.Status != 0 && this.Status != 1 && this.Status != -1);
+                        //this.Btn_retrieve = (this.Status == -1);
                         StringBuilder stringBuilder2 = new StringBuilder("select fitemid,fitemcode,fitemname,ftransfer_batch from vw_ExecKB_Detail_List ");
                         stringBuilder2.Append("  where fbillno='" + this.BoardNo + "'");
                         this.DtItems =(DataTable) DataHelper.ExecuteSql(stringBuilder2.ToString(),DataHelper.CreateSqlConn("shjxmes"),DataHelper.RetrunType.dataTable);
@@ -267,7 +289,7 @@ namespace SHJXMESWCFServer
                             catch (Exception ex)
                             {
                                 
-                                this.Tb_Board = null;
+                                this.Tb_Board = "";
                                 //this.tb_Board.Enabled = true;
                                 //this.tb_Board.Focus();
                                 Err= "错误提示:看板扫描错误!" + ex.Message;
@@ -280,75 +302,130 @@ namespace SHJXMESWCFServer
                         
                         //this.tb_Board.Enabled = true;
                         //this.tb_Board.Focus();
-                        this.Tb_Board = null;
+                        this.Tb_Board = "";
                        
                     }
                    
                 }
                
             }
+            //DataContractSerializer contractSerializer = new DataContractSerializer(typeof(MESService));
+
+            //MemoryStream stream = new MemoryStream();
+
+            //contractSerializer.WriteObject(stream, this);
+            //byte[] value = new byte[stream.Length];
+            //stream.Seek(0, SeekOrigin.Begin);
+            //stream.Read( value, 0, (int)stream.Length);
+            //return Encoding.UTF8.GetString(value);
             return Newtonsoft.Json.JsonConvert.SerializeObject(this);
         }
+       // [WebGet(UriTemplate = "sscan?kbno={kbno}", ResponseFormat = WebMessageFormat.Xml, BodyStyle = WebMessageBodyStyle.Bare)]
+        public string StartScan()        {
 
-        public string StartScan()
-        {
-            if (this.tb_Board.IndexOf("-") > -1)
+           
+
+            if (this.Tb_Board.IndexOf("-") > -1)
             {
-                if (this.HandleData(-1) == -1)
+                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.User, -1) == -1)
                 {
                     string text = "【开工】提交失败，请重新采集看板";
                     Err = text;
                 }
                 //this.tb_Board.Enabled = true;
                 //this.tb_Board.Focus();
-                this.tb_Board = "";
-                this.tb_cPro = "";
-                this.tb_nPro = "";
-                this._dtItems.Clear();
-                this._dtprocess.Clear();
+                this.Tb_Board = "";
+                this.Tb_cPro = "";
+                this.Tb_nPro = "";
+                //this.DtItems.Clear();
+                //this.Dtprocess.Clear();
                 //this.btn_start.Enabled = false;
                 
             }
             return Newtonsoft.Json.JsonConvert.SerializeObject(this);
         }
-
-        public string SubmitScanData()
+        [WebGet(UriTemplate = "submit?kbno={kbno}",ResponseFormat = WebMessageFormat.Xml,BodyStyle = WebMessageBodyStyle.Wrapped)]
+        public string Submit(string kbno)
         {
-            if (this.tb_Board.IndexOf("-") > -1)
+            this.Tb_Board = kbno;
+            if ((string.IsNullOrEmpty(this.Tb_Board)?"": this.Tb_Board).IndexOf("-") > -1)
             {
-                for (int i = 0; i <= this._dtItems.Rows.Count - 1; i++)
+                for (int i = 0; i <= this.DtItems.Rows.Count - 1; i++)
                 {
-                    int num = int.Parse(this._dtItems.Rows[i]["ftransfer_batch"].ToString());
+                    int num = int.Parse(this.DtItems.Rows[i]["ftransfer_batch"].ToString());
                     string sql = string.Concat(new string[]
                     {
                         "select isnull(fcount,0) as fcount from lkm_blank_inventory where fitemid=",
-                        this._dtItems.Rows[i]["fitemid"].ToString(),
+                        this.DtItems.Rows[i]["fitemid"].ToString(),
                         " and flineid = ",
-                        this._lineID.ToString(),
+                        this.LineID.ToString(),
                         " and fproid = (select fProTecID from LKM_MCCPTEntry where finterid = ",
-                        this._status.ToString(),
+                        this.Status.ToString(),
                         ")"
                     });
                     int num2 = int.Parse(DataHelper.ExecuteSql(sql, DataHelper.CreateSqlConn("shjxmes"), DataHelper.RetrunType.integer).ToString());
                     if (num2 - num < 0)
                     {
-                        string text = "当前物料[" + this._dtItems.Rows[i]["fitemname"].ToString() + "]库存不足，不允许提交";
+                        string text = "当前物料[" + this.DtItems.Rows[i]["fitemname"].ToString() + "]库存不足，不允许提交";
                         Err = text;
                         return Newtonsoft.Json.JsonConvert.SerializeObject(this);
                     }
                 }
-                if (this.HandleData(0) == -1)
+                if (this.HandleData(this.Kbid,this.Scanid,this.LineID,this.Status,this.Next_status,this.User, 0) == -1)
                 {
                     string text = "提交失败，请重新采集看板";
                     Err = text;
                 }
                 //this.tb_Board.Enabled = true;
                 //this.tb_Board.Focus();
-                this.tb_Board = null;
-                this.tb_cPro = null;
-                this.tb_nPro= null;
-                this._dtItems.Clear();
-                this._dtprocess.Clear();
+                this.Tb_Board= "";
+                this.Tb_cPro= "";
+                this.Tb_nPro= "";
+                this.DtItems.Clear();
+                this.Dtprocess.Clear();
+                //this.btn_start.Enabled = false;
+                //this.btn_submit.Enabled = false;               
+            }
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+        }
+
+        public string SubmitScanData()
+        {
+            if (this.Tb_Board.IndexOf("-") > -1)
+            {
+                for (int i = 0; i <= this.DtItems.Rows.Count - 1; i++)
+                {
+                    int num = int.Parse(this.DtItems.Rows[i]["ftransfer_batch"].ToString());
+                    string sql = string.Concat(new string[]
+                    {
+                        "select isnull(fcount,0) as fcount from lkm_blank_inventory where fitemid=",
+                        this.DtItems.Rows[i]["fitemid"].ToString(),
+                        " and flineid = ",
+                        this.LineID.ToString(),
+                        " and fproid = (select fProTecID from LKM_MCCPTEntry where finterid = ",
+                        this.Status.ToString(),
+                        ")"
+                    });
+                    int num2 = int.Parse(DataHelper.ExecuteSql(sql, DataHelper.CreateSqlConn("shjxmes"), DataHelper.RetrunType.integer).ToString());
+                    if (num2 - num < 0)
+                    {
+                        string text = "当前物料[" + this.DtItems.Rows[i]["fitemname"].ToString() + "]库存不足，不允许提交";
+                        Err = text;
+                        return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+                    }
+                }
+                if (this.HandleData(this.Kbid, this.Scanid, this.LineID, this.Status, this.Next_status, this.User, 0) == -1)
+                {
+                    string text = "提交失败，请重新采集看板";
+                    Err = text;
+                }
+                //this.tb_Board.Enabled = true;
+                //this.tb_Board.Focus();
+                this.Tb_Board = "";
+                this.Tb_cPro = "";
+                this.Tb_nPro= "";
+                this.DtItems.Clear();
+                this.Dtprocess.Clear();
                
                 //this.btn_start.Enabled = false;
                 //this.btn_submit.Enabled = false;

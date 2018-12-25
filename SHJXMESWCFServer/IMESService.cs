@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel;
@@ -19,12 +20,17 @@ namespace SHJXMESWCFServer
 
         [OperationContract]
         DataTable GetProcess(int id);
+       
+        int HandleData(int kbid, int scanid, int lineid, int status, int nextStatus, string user, int type);
         [OperationContract]
-        int HandleData(int type);
+        string Scan(string kbno);
         [OperationContract]
-        string Scan();
         string StartScan();
         string SubmitScanData();
+        [OperationContract]
+        string Login(string loginInfo);
+        [OperationContract]
+        string Submit(string kbno);
 
         // TODO: 在此添加您的服务操作
     }

@@ -1,1 +1,1 @@
-﻿<%@ ServiceHost Language="C#" Debug="true" Service="SHJXMESWCFServer.Service1" CodeBehind="MESService.svc.cs" %>
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="SHJXMESWCFServer.MESService" CodeBehind="MESService.svc.cs" %>

@@ -47,15 +47,17 @@ namespace SHJXMESWCFServer
           
         }
        
-        public static int ExecuteSqlprocedure(string SqlProName,SqlConnection sqlconn)
+        public static int ExecuteSqlprocedure(string SqlProName,SqlParameter[] sqlParameters, SqlConnection sqlconn)
         {
             try
             {
+                sqlconn.Open();
                 SqlCommand sqlCommand = new SqlCommand();
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.CommandText = SqlProName;
                 sqlCommand.Connection = sqlconn;
-                return (int)sqlCommand.ExecuteScalar();
+                sqlCommand.Parameters.AddRange(sqlParameters);
+                return (int)sqlCommand.ExecuteNonQuery();
             }
             catch (Exception)
             {
